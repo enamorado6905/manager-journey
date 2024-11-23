@@ -238,7 +238,7 @@ function contabilizarTurnos() {
     const celdasResumen = filaResumen.querySelectorAll('td');
     celdasResumen[0].textContent = 'Resumen';
     for (let i = 0; i < 7; i++) {
-        celdasResumen[i + 1].innerHTML = Open: ${resumen.abrir[i]}<br>Lunch: ${resumen.lunch[i]}<br>Dinner: ${resumen.dinner[i]}<br>Close: ${resumen.close[i]};
+        celdasResumen[i + 1].innerHTML = `Open: ${resumen.abrir[i]}<br>Lunch: ${resumen.lunch[i]}<br>Dinner: ${resumen.dinner[i]}<br>Close: ${resumen.close[i]}`;
     }
     celdasResumen[8].textContent = ''; // Total de horas no aplica aquí
 }
