@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">  
     <title>Asignación de Turnos</title>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap">
     <style>
@@ -91,6 +91,10 @@
                 padding: 10px;
             }
         }
+        .logo-container {
+    text-align: left;
+    margin-bottom: 20px;
+}
     </style>
     <!-- Incluir jsPDF y jsPDF-AutoTable -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.4.0/jspdf.umd.min.js"></script>
@@ -274,8 +278,7 @@ function asignarTurnosRandom() {
     contabilizarTurnos();
 }
 
-    //Funcion para imprimir PDF
-    function imprimirPDF() {
+function imprimirPDF() {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
 
@@ -290,13 +293,13 @@ function asignarTurnosRandom() {
     const encabezados = ["Trabajador", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo", "Total de Horas"];
     filasPDF.push(encabezados);
 
-    // Recorrer las filas de la tabla (excepto la fila de resumen si existe)
-    const filasHTML = document.querySelectorAll('#tabla-turnos tr:not(.resumen-turnos)');
+    // Recorrer la tabla y extraer los valores de cada turno asignado
+    const filasHTML = document.querySelectorAll('#tabla-turnos tr');
     filasHTML.forEach(fila => {
         const celdasPDF = [];
         
         // Agregar nombre del trabajador (primer celda)
-        const nombreTrabajador = fila.querySelector('td:first-child')?.textContent || '';
+        const nombreTrabajador = fila.querySelector('td:first-child').textContent;
         celdasPDF.push(nombreTrabajador);
 
         // Extraer el turno seleccionado de cada celda
@@ -313,7 +316,7 @@ function asignarTurnosRandom() {
         filasPDF.push(celdasPDF);
     });
 
-    // Agregar la fila de resumen si existe
+    // Generar la fila de resumen si existe
     const filaResumen = document.querySelector('#tabla-turnos .resumen-turnos');
     if (filaResumen) {
         const celdasResumen = filaResumen.querySelectorAll('td');
@@ -345,7 +348,6 @@ function asignarTurnosRandom() {
     // Descargar el archivo PDF
     doc.save('horario_turnos.pdf');
 }
-
 
 // Crear la tabla cuando la página carga
 document.addEventListener('DOMContentLoaded', () => {
