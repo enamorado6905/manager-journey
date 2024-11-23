@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Asignación de Turnos</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap">
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: #f4f4f9;
+            margin: 0;
+            padding: 20px;
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+            font-size: 2.5rem;
+            margin-bottom: 20px;
+        }
+        table {
+            width: 100%;
+            margin: 20px 0;
+            border-collapse: collapse;
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+        th, td {
+            padding: 15px;
+            text-align: center;
+            font-size: 1rem;
+            color: #333;
+        }
+        th {
+            background-color: #4CAF50;
+            color: white;
+            text-transform: uppercase;
+            font-weight: 500;
+        }
+        td {
+            border-bottom: 1px solid #e6e6e6;
+        }
+        select {
+            padding: 10px;
+            font-size: 1rem;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            background-color: #f4f4f9;
+            color: #333;
+            outline: none;
+            width: 100%;
+        }
+        select:focus {
+            border-color: #4CAF50;
+        }
+        .total-hours {
+            margin-top: 20px;
+            text-align: center;
+        }
+        button {
+            padding: 12px 30px;
+            font-size: 1.2rem;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            transition: background-color 0.3s ease;
+            margin: 10px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        button:focus {
+            outline: none;
+        }
+        .horas-totales {
+            font-weight: 700;
+            color: #4CAF50;
+        }
+        .resumen-turnos {
+            font-weight: bold;
+            background-color: #e6f7e6;
+        }
+        @media (max-width: 768px) {
+            th, td {
+                font-size: 0.9rem;
+                padding: 10px;
+            }
+        }
+    </style>
+    <!-- Incluir jsPDF y jsPDF-AutoTable -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.4.0/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
+</head>
+<body>
+
+<h1>Asignación de Turnos</h1>
+
+<table>
+    <thead>
+        <tr>
+            <th>Trabajador</th>
+            <th>Lunes</th>
+            <th>Martes</th>
+            <th>Miércoles</th>
+            <th>Jueves</th>
+            <th>Viernes</th>
+            <th>Sábado</th>
+            <th>Domingo</th>
+            <th>Total de Horas</th>
+        </tr>
+    </thead>
+    <tbody id="tabla-turnos">
+        <!-- Aquí se llenarán los turnos de los trabajadores -->
+    </tbody>
+</table>
+
+<div class="total-hours">
+    <button onclick="asignarTurnosRandom()">Asignar Turnos Aleatorios</button>
+    <button onclick="imprimirPDF()">Imprimir Horario en PDF</button>
+</div>
+
+<script>
+// Definir los turnos y las horas asociadas, incluyendo el turno ""
+const turnosSemana = {
+    "lunes": {"": 0, "9am-DBL": 10, "12pm-CL": 9, "9am-Lunch": 6, "4pm-CL": 6, "OFF": 0},
+    "martes": {"": 0, "9am-DBL": 10, "12pm-CL": 9, "9am-Lunch": 6, "4pm-CL": 6, "OFF": 0},
+    "miércoles": {"": 0, "9am-DBL": 10, "12pm-CL": 9, "9am-Lunch": 6, "4pm-CL": 6, "OFF": 0},
+    "jueves": {"": 0, "9am-DBL": 10, "12pm-CL": 9, "9am-Lunch": 6, "4pm-CL": 6, "OFF": 0},
+    "viernes": {"": 0, "9am-DBL": 11, "12pm-CL": 10, "9am-Lunch": 6, "4pm-CL": 7, "OFF": 0},
+    "sábado": {"": 0, "9am-DBL": 11, "12pm-CL": 10, "9am-Lunch": 6, "4pm-CL": 7, "OFF": 0},
+    "domingo": {"": 0, "9am-DBL": 10, "12pm-CL": 9, "9am-Lunch": 6, "4pm-CL": 6, "OFF": 0}
+};
+
+// Lista de 13 trabajadores
+const trabajadores = [
+    'Nerio', 'Brian', 'Guilherme', 'Jose', 'Jhonathan',
+    'Gibran', 'Jonathan', 'Javier L.', 'Joseyan', 'Javier Mor.',
+    'Jose D.', 'Sergio', 'Javier Mata'
+];
+
+// Función para crear la tabla de turnos
+function crearTablaTurnos() {
+    const tabla = document.getElementById('tabla-turnos');
+    trabajadores.forEach(trabajador => {
+        const fila = document.createElement('tr');
+
+        // Celda con el nombre del trabajador
+        const celdaNombre = document.createElement('td');
+        celdaNombre.textContent = trabajador;
+        fila.appendChild(celdaNombre);
+
+        // Crear celdas con los selectores de turnos
+        ['lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado', 'domingo'].forEach(dia => {
+            const celda = document.createElement('td');
+            const select = document.createElement('select');
+            for (const turno in turnosSemana[dia]) {
+                const option = document.createElement('option');
+                option.value = turno;
+                option.textContent = turno === "" ? " " : turno;  // Mostrar espacio en blanco para el turno ""
+                select.appendChild(option);
+            }
+            select.value = "";
+            celda.appendChild(select);
+            fila.appendChild(celda);
+        });
+
+        // Celda para mostrar las horas totales
+        const celdaHoras = document.createElement('td');
+        celdaHoras.className = 'horas-totales';
+        celdaHoras.textContent = '0';
+        fila.appendChild(celdaHoras);
+
+        const selectores = fila.querySelectorAll('select');
+        selectores.forEach(select => {
+            select.addEventListener('change', () => calcularHoras(fila, selectores));
+        });
+
+        tabla.appendChild(fila);
+    });
+}
+
+// Función para calcular las horas asignadas a cada trabajador
+function calcularHoras(fila, selectores) {
+    let totalHoras = 0;
+    selectores.forEach((select, index) => {
+        const dia = ['lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado', 'domingo'][index];
+        const turno = select.value;
+        totalHoras += turnosSemana[dia][turno];
+    });
+    const totalHorasCelda = fila.querySelector('.horas-totales');
+    totalHorasCelda.textContent = totalHoras;
+
+    // Cambiar color de texto a rojo si el total supera 40 horas
+    totalHorasCelda.style.color = totalHoras > 40 ? 'red' : '#4CAF50';
+
+    // Recalcular el resumen
+    contabilizarTurnos();
+}
+
+// Función para contabilizar los turnos al final de la tabla
+function contabilizarTurnos() {
+    const filas = document.querySelectorAll('#tabla-turnos tr');
+    const resumen = {
+        abrir: Array(7).fill(0),
+        lunch: Array(7).fill(0),
+        dinner: Array(7).fill(0),
+        close: Array(7).fill(0)
+    };
+
+    filas.forEach(fila => {
+        const selectores = fila.querySelectorAll('select');
+        selectores.forEach((select, index) => {
+            const turno = select.value;
+            if (["9am-DBL", "9am-Lunch"].includes(turno)) resumen.abrir[index]++;
+            if (["9am-DBL", "12pm-CL", "9am-Lunch"].includes(turno)) resumen.lunch[index]++;
+            if (["9am-DBL", "12pm-CL", "4pm-CL"].includes(turno)) resumen.dinner[index]++;
+            if (["12pm-CL", "4pm-CL"].includes(turno)) resumen.close[index]++;
+        });
+    });
+
+    // Crear o actualizar la fila de resumen
+    let filaResumen = document.querySelector('#tabla-turnos .resumen-turnos');
+    if (!filaResumen) {
+        filaResumen = document.createElement('tr');
+        filaResumen.className = 'resumen-turnos';
+        for (let i = 0; i <= 8; i++) {
+            const celda = document.createElement('td');
+            filaResumen.appendChild(celda);
+        }
+        document.getElementById('tabla-turnos').appendChild(filaResumen);
+    }
+
+    const celdasResumen = filaResumen.querySelectorAll('td');
+    celdasResumen[0].textContent = 'Resumen';
+    for (let i = 0; i < 7; i++) {
+        celdasResumen[i + 1].innerHTML = Open: ${resumen.abrir[i]}<br>Lunch: ${resumen.lunch[i]}<br>Dinner: ${resumen.dinner[i]}<br>Close: ${resumen.close[i]};
+    }
+    celdasResumen[8].textContent = ''; // Total de horas no aplica aquí
+}
+
+// Función para asignar turnos aleatorios evitando los turnos OFF
+function asignarTurnosRandom() {
+    const filas = document.querySelectorAll('#tabla-turnos tr');
+    filas.forEach(fila => {
+        const selectores = fila.querySelectorAll('select');
+        let totalHoras = 0;
+
+        selectores.forEach((select, index) => {
+            const dia = ['lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado', 'domingo'][index];
+            if (select.value !== "OFF") {
+                let turnoAleatorio;
+                do {
+                    const turnosDisponibles = Object.keys(turnosSemana[dia]);
+                    turnoAleatorio = turnosDisponibles[Math.floor(Math.random() * turnosDisponibles.length)];
+                } while (turnoAleatorio === "OFF");
+                select.value = turnoAleatorio;
+                totalHoras += turnosSemana[dia][turnoAleatorio];
+            }
+        });
+
+        const totalHorasCelda = fila.querySelector('.horas-totales');
+        totalHorasCelda.textContent = totalHoras;
+
+        // Cambiar color de texto a rojo si el total supera 40 horas
+        totalHorasCelda.style.color = totalHoras > 40 ? 'red' : '#4CAF50';
+    });
+
+    // Recalcular el resumen
+    contabilizarTurnos();
+}
+
+    //Funcion para imprimir PDF
+    function imprimirPDF() {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+
+    // Título del PDF
+    doc.setFontSize(14);
+    doc.text('Horario de Turnos', 105, 20, null, null, 'center');
+
+    // Crear datos para el PDF a partir de la tabla en pantalla
+    const filasPDF = [];
+    
+    // Encabezados
+    const encabezados = ["Trabajador", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo", "Total de Horas"];
+    filasPDF.push(encabezados);
+
+    // Recorrer las filas de la tabla (excepto la fila de resumen si existe)
+    const filasHTML = document.querySelectorAll('#tabla-turnos tr:not(.resumen-turnos)');
+    filasHTML.forEach(fila => {
+        const celdasPDF = [];
+        
+        // Agregar nombre del trabajador (primer celda)
+        const nombreTrabajador = fila.querySelector('td:first-child')?.textContent || '';
+        celdasPDF.push(nombreTrabajador);
+
+        // Extraer el turno seleccionado de cada celda
+        const selectores = fila.querySelectorAll('select');
+        selectores.forEach(select => {
+            celdasPDF.push(select.value || " "); // Solo el valor seleccionado
+        });
+
+        // Agregar la celda con el total de horas
+        const totalHoras = fila.querySelector('.horas-totales')?.textContent || '';
+        celdasPDF.push(totalHoras);
+
+        // Añadir la fila procesada a la tabla PDF
+        filasPDF.push(celdasPDF);
+    });
+
+    // Agregar la fila de resumen si existe
+    const filaResumen = document.querySelector('#tabla-turnos .resumen-turnos');
+    if (filaResumen) {
+        const celdasResumen = filaResumen.querySelectorAll('td');
+        const filaResumenPDF = Array.from(celdasResumen).map(celda => celda.innerText.replace(/\n/g, ' '));
+        filasPDF.push(filaResumenPDF);
+    }
+
+    // Usar autoTable para crear la tabla en el PDF con los datos procesados
+    doc.autoTable({
+        head: [encabezados],
+        body: filasPDF.slice(1), // Evitar duplicación del encabezado
+        startY: 30,
+        theme: 'grid',
+        styles: {
+            fontSize: 9,
+            cellPadding: 2,
+            halign: 'center',
+            valign: 'middle',
+        },
+        didParseCell: function (data) {
+            // Verifica si está en la columna "Total de Horas" y el valor es mayor a 40
+            const columnIndex = encabezados.indexOf("Total de Horas");
+            if (data.column.index === columnIndex && parseInt(data.cell.raw) > 40) {
+                data.cell.styles.textColor = [255, 0, 0]; // Cambia el color de texto a rojo
+            }
+        }
+    });
+
+    // Descargar el archivo PDF
+    doc.save('horario_turnos.pdf');
+}
+
+
+// Crear la tabla cuando la página carga
+document.addEventListener('DOMContentLoaded', () => {
+    crearTablaTurnos();
+    contabilizarTurnos();
+});
+</script>
+
+</body>
+</html>
